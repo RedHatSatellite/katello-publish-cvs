@@ -1,3 +1,10 @@
 # katello-publish-cvs
 
-This script gets all Content Views from Satellite 6 and publish a new version of them. After that, it iterates through all Composite Content Views and updates them with the new versions of its components. Then it publishes the Composite Content Views as well and promotes them to the first Lifecycle Environment, currently hard coded to TEST.
+The purpose of this script is to automate the process of publishing new content in Red Hat Satellite 6.
+
+It performs the following steps:
+
+1. Publish a new version of all Content Views
+1. Update all comonents of all Composite Content Views to the latest published version
+1. Publish a new version of all effected Composite Content Views
+1. Promote all Composite Content Views to the first Lifecycle Environment (in this case hard-coded to TEST)
