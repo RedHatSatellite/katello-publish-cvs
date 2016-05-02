@@ -115,7 +115,7 @@ def main():
 
     wait_for_publish(10)
 
-    # Get all CCVs from the API
+    # Get all CCVs from the API (TODO: don't use search to get CCVs by name)
     print "DEBUG: " + SAT_API + "organizations/" + str(org_id) + "/content_views"
     ccvs_json = get_json(SAT_API + "organizations/" + str(org_id) + "/content_views?search=CCV*")
     
