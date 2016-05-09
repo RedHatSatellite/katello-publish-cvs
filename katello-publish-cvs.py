@@ -3,6 +3,7 @@
 import json
 import sys
 import time
+from datetime import datetime
 
 
 try:
@@ -12,7 +13,7 @@ except ImportError:
     sys.exit(-1)
 
 # URL to your Satellite 6 server
-URL = "https://satellite6.example.com/"
+URL = "https://sat62.example.com/"
 # URL for the API to your deployed Satellite 6 server
 SAT_API = URL + "katello/api/v2/"
 # Katello-specific API
@@ -29,6 +30,7 @@ ORG_NAME = "Default Organization"
 ENVIRONMENTS = {}
 # Search string to list currently running publish tasks
 publish_tasks = "foreman_tasks/api/tasks?search=utf8=%E2%9C%93&search=label+%3D+Actions%3A%3AKatello%3A%3AContentView%3A%3APublish+and+state+%3D+running"
+sync_tasks = "foreman_tasks/api/tasks?utf8=%E2%9C%93&search=label+%3D+Actions%3A%3AKatello%3A%3ARepository%3A%3ASync+and+state+%3D+stopped+and+result+%3D+success"
 
 def get_json(location):
     """
@@ -74,13 +76,16 @@ def wait_for_publish(seconds):
    
     count = 0 
     print "DEBUG: Waiting for publish tasks to finish..."
+    
+    # Make sure that publish tasks gets the chance to appear before looking for them
+    time.sleep(2) 
+    
     while get_json(URL + publish_tasks)["total"] != 0:
         time.sleep(seconds)
         count += 1
 
     print "DEBUG: Finished waiting after " + str(seconds * count) + " seconds"
-
-
+    
 def main():
 
     # Check that organization exists and extract its ID
@@ -102,22 +107,37 @@ def main():
     print "DEBUG: Lifecycle environments: " + str(ENVIRONMENTS)
     
     # Get all non-composite CVs from the API
-    print "DEBUG: " + SAT_API + "organizations/" + str(org_id) + "/content_views?noncomposite=true"
-    cvs_json = get_json(SAT_API + "organizations/" + str(org_id) + "/content_views?noncomposite=true")
+    cvs_json = get_json(SAT_API + "organizations/" + str(org_id) + "/content_views?noncomposite=true&nondefault=true")
    
-    # Publish a new version of all CVs
+    # Get all sync tasks
+    sync_tasks_json = get_json(URL + sync_tasks)
+
+    # Publish new versions of the CVs that have new content in the underlying repos
     published_cv_ids = []
     for cv in cvs_json["results"]:
-        if not "Default Organization View" in cv["name"]:
-            print "DEBUG: Publishing " + cv["name"]
+        last_published = datetime.strptime(cv["last_published"], '%Y-%m-%d  %X %Z')
+
+        need_publish = False
+        for repo in cv["repositories"]:
+
+            for task in sync_tasks_json["results"]:
+                if task["input"]["repository"]["id"] == repo["id"]:
+                    ended_at = datetime.strptime(task["ended_at"], '%Y-%m-%dT%H:%M:%S.000Z')
+
+                    if ended_at > last_published and task["input"]["contents_changed"]:
+                        print "DEBUG: A sync task for repo \"" + repo["name"] + "\" downloaded new content and ended after " + cv["name"] + " was published last time"
+                        need_publish = True
+
+        if need_publish:
+            print "DEBUG: Publish " + cv["name"] + " because some of its content has changed"
             post_json(KATELLO_API + "content_views/" + str(cv["id"]) + "/publish", json.dumps({"description": "Automatic publish over API"}))
             published_cv_ids.append(cv["id"])
 
+
     wait_for_publish(10)
 
-    # Get all CCVs from the API (TODO: don't use search to get CCVs by name)
-    print "DEBUG: " + SAT_API + "organizations/" + str(org_id) + "/content_views"
-    ccvs_json = get_json(SAT_API + "organizations/" + str(org_id) + "/content_views?search=CCV*")
+    # Get all CCVs from the API 
+    ccvs_json = get_json(SAT_API + "organizations/" + str(org_id) + "/content_views?composite=true")
     
     # Publish a new version of all CCs that contain any of the published CVs
     ccv_ids_to_promote = []
@@ -149,6 +169,6 @@ def main():
 
     print "DEBUG: End of main"
 
+
 if __name__ == "__main__":
     main()
-
