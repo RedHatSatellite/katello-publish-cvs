@@ -22,18 +22,15 @@ This script has been tested and works on:
 
 # Usage
 
-~~
-
+~~~
 ./katello-publish-cvs.py
-
-~~
+~~~
 
 # Example Output
 
 In this example, there has been new RPMs synced to the repository "Red Hat Enterprise Linux 7 Server RPMs x86_64 7Server" which is part of CV-RHEL7. Then the output looks like the following:
 
-~~
-
+~~~
 Organization "Default Organization has ID: 1
 Lifecycle environments: {u'TEST': 4, u'PROD': 5, u'Library': 1}
 A sync task for repo "Red Hat Enterprise Linux 7 Server RPMs x86_64 7Server" downloaded new content and ended after CV-RHEL7 was published last time
@@ -49,8 +46,7 @@ Publish new version of CCV-RHEL7
 Waiting for publish tasks to finish...
 Finished waiting after 150 seconds
 Promote all effected CCVs to TEST environment
-
-~~
+~~~
 
 # Known issues
 
