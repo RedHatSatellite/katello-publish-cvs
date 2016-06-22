@@ -1,10 +1,10 @@
 # katello-publish-cvs
 
-The purpose of this script is to automate the process of publishing and promoting content views in Red Hat Satellite 6. This makes it possible to push all new RPMs through your CVs and CCVs automatically. It can for example be run as a cron job at a certain date when you want to publish all new content to a certain lifecyle environment.
+The purpose of this script is to automate the process of publishing and promoting content views in Red Hat Satellite 6. This makes it possible to push all new RPMs through your CVs and CCVs automatically. It can for example be run as a cron job at a certain date when you want to publish all new content to a certain lifecycle environment.
 
 # Workflow
 
-This script will first get all Content Views (CVs) from the API. Then for each CV, it will check if any of the underlying repos in that CV has had any updates since last time the CV was published. If so, the CV is published again so that it contain the latest content. 
+This script will first get all Content Views (CVs) from the API. Then for each CV, it will check if any of the underlying repos in that CV has had any updates since last time the CV was published. If so, the CV is published so that it contain the latest content. 
 
 Then, the script moves on to the Composite Content Views (CCVs). Each CCV is updated with the latest versions of its components, i.e. the version of each CV that is in the Library lifecycle environment.  Then the CCV will be published and also promoted to the TEST environment.
 
@@ -17,6 +17,7 @@ This script has been tested and works on:
 # Prerequisites
 
 * A login user to Satellite
+* Organization name 
 * Python
 * python-requests
 
@@ -51,4 +52,4 @@ Promote all effected CCVs to TEST environment
 # Known issues
 
 * All CCVs are published everytime the script is run, even if they are not changed. This can be improved by only publishing and promoting CCVs where any of the components have actually changed (future feature).
-
+* The TEST lifecycle environment is currently hard coded. This can be made more flexible.
