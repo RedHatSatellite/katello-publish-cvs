@@ -4,16 +4,12 @@ import json
 import sys
 import time
 from datetime import datetime
-
-
-try:
-    import requests
-except ImportError:
-    print "Please install the python-requests module."
-    sys.exit(-1)
+import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 # URL to your Satellite 6 server
-URL = "https://sat62.example.com/"
+URL = "https://localhost/"
 # URL for the API to your deployed Satellite 6 server
 SAT_API = URL + "katello/api/v2/"
 # Katello-specific API
@@ -75,7 +71,7 @@ def wait_for_publish(seconds):
     """
    
     count = 0 
-    print "DEBUG: Waiting for publish tasks to finish..."
+    print "Waiting for publish tasks to finish..."
     
     # Make sure that publish tasks gets the chance to appear before looking for them
     time.sleep(2) 
@@ -84,27 +80,27 @@ def wait_for_publish(seconds):
         time.sleep(seconds)
         count += 1
 
-    print "DEBUG: Finished waiting after " + str(seconds * count) + " seconds"
+    print "Finished waiting after " + str(seconds * count) + " seconds"
     
 def main():
 
     # Check that organization exists and extract its ID
-    print "DEBUG: " + SAT_API + "organizations/" + ORG_NAME
     org_json = get_json(SAT_API + "organizations/" + ORG_NAME)
     
     if org_json.get('error', None):
-        print "ERROR: Organization does not exist"
+        print "ERROR: Inspect message"
+        print org_json
         sys.exit(1)
 
     org_id =org_json["id"]
-    print "DEBUG: Organization ID: " + str(org_id)
+    print 'Organization \"' + ORG_NAME + ' has ID: ' + str(org_id)
 
     # Fill dictionary of Lifecycle Environments as {name : id}
     envs_json = get_json(KATELLO_API + "organizations/" + str(org_id) + "/environments")
     for env in envs_json["results"]:
         ENVIRONMENTS[env["name"]] = env["id"]
 
-    print "DEBUG: Lifecycle environments: " + str(ENVIRONMENTS)
+    print "Lifecycle environments: " + str(ENVIRONMENTS)
     
     # Get all non-composite CVs from the API
     cvs_json = get_json(SAT_API + "organizations/" + str(org_id) + "/content_views?noncomposite=true&nondefault=true")
@@ -125,14 +121,15 @@ def main():
                     ended_at = datetime.strptime(task["ended_at"], '%Y-%m-%dT%H:%M:%S.000Z')
 
                     if ended_at > last_published and task["input"]["contents_changed"]:
-                        print "DEBUG: A sync task for repo \"" + repo["name"] + "\" downloaded new content and ended after " + cv["name"] + " was published last time"
+                        print "A sync task for repo \"" + repo["name"] + "\" downloaded new content and ended after " + cv["name"] + " was published last time"
                         need_publish = True
 
         if need_publish:
-            print "DEBUG: Publish " + cv["name"] + " because some of its content has changed"
+            print "Publish " + cv["name"] + " because some of its content has changed"
             post_json(KATELLO_API + "content_views/" + str(cv["id"]) + "/publish", json.dumps({"description": "Automatic publish over API"}))
             published_cv_ids.append(cv["id"])
-
+        else:
+            print cv["name"] + " doesn't need to be published"
 
     wait_for_publish(10)
 
@@ -151,10 +148,10 @@ def main():
                 if ENVIRONMENTS["Library"] in version["environment_ids"]:
                     new_component_ids.append(version["id"])
         
-        print "DEBUG: Update " + ccv["name"] + " with new compontent IDs: " + str(new_component_ids)
+        print "Update " + ccv["name"] + " with new compontent IDs: " + str(new_component_ids)
         put_json(KATELLO_API + "content_views/" + str(ccv["id"]), json.dumps({"component_ids": new_component_ids}))
         
-        print "DEBUG: Publish new version of " + ccv["name"]
+        print "Publish new version of " + ccv["name"]
         post_json(KATELLO_API + "content_views/" + str(ccv["id"]) + "/publish", json.dumps({"description": "Automatic publish over API"}))
 
         # Get the ID of the version in Library 
@@ -163,11 +160,9 @@ def main():
 
     wait_for_publish(10)
     
-    print "DEBUG: Promote all new CCVs to TEST environment"
+    print "Promote all effected CCVs to TEST environment"
     for ccv_id in ccv_ids_to_promote:
         post_json(KATELLO_API + "content_view_versions/" + str(ccv_id) + "/promote", json.dumps({"environment_id": ENVIRONMENTS["TEST"]})) 
-
-    print "DEBUG: End of main"
 
 
 if __name__ == "__main__":
