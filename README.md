@@ -1,4 +1,4 @@
-# katello-publish-cv
+# katello-publish-cvs
 
 The purpose of this script is to automate the process of publishing and promoting content views in Red Hat Satellite 6. This makes it possible to push all new RPMs through your CVs and CCVs automatically. It can for example be run as a cron job at a certain date when you want to publish all new content to a certain lifecyle environment.
 
