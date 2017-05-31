@@ -96,7 +96,7 @@ def main():
     print 'Organization \"' + ORG_NAME + ' has ID: ' + str(org_id)
 
     # Fill dictionary of Lifecycle Environments as {name : id}
-    envs_json = get_json(KATELLO_API + "organizations/" + str(org_id) + "/environments")
+    envs_json = get_json(KATELLO_API + "organizations/" + str(org_id) + "/environments?per_page=999")
     for env in envs_json["results"]:
         ENVIRONMENTS[env["name"]] = env["id"]
 
