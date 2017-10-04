@@ -26,7 +26,7 @@ ORG_NAME = "Default Organization"
 ENVIRONMENTS = {}
 # Search string to list currently running publish tasks
 publish_tasks = "foreman_tasks/api/tasks?search=utf8=%E2%9C%93&search=label+%3D+Actions%3A%3AKatello%3A%3AContentView%3A%3APublish+and+state+%3D+running"
-sync_tasks = "foreman_tasks/api/tasks?utf8=%E2%9C%93&search=label+%3D+Actions%3A%3AKatello%3A%3ARepository%3A%3ASync+and+state+%3D+stopped+and+result+%3D+success"
+sync_tasks = "foreman_tasks/api/tasks?utf8=%E2%9C%93&per_page=1000&search=label+%3D+Actions%3A%3AKatello%3A%3ARepository%3A%3ASync+and+state+%3D+stopped+and+result+%3D+success"
 
 def get_json(location):
     """
